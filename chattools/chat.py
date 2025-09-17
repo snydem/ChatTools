@@ -1,6 +1,4 @@
 import socket
-import fcntl
-import os
 import errno
 
 
@@ -8,10 +6,11 @@ class Chat(object):
     twitch_server = 'irc.chat.twitch.tv'
     twitch_port = 6667
 
-    def __init__(self, oauth_token: str, channel: str, nickname: str = "",
+    def __init__(self, oauth_token: str, channel_name: str, nickname: str = "",
                  server: str = twitch_server, port: int = twitch_port):
         self.oauth_token = oauth_token
-        self.channel = channel
+        self.channel_name = channel_name
+        self.channel = "#" + channel_name
         self.nickname = nickname
         self.server = server
         self.port = port
@@ -24,7 +23,8 @@ class Chat(object):
         # create a twitch bot that lives on a blocking socket, i.e. it waits
         # until it recieves a message. If that need ever arises, I'll create a
         # flag for it, but for now every chat object is a non-blocking object
-        fcntl.fcntl(self.sock, fcntl.F_SETFL, os.O_NONBLOCK)
+        self.sock.setblocking(False)
+        self.sock.settimeout(0)
 
     def _send_keep_alive(self, ping_msg: str) -> None:
         """
@@ -37,9 +37,9 @@ class Chat(object):
         """
         Helper function just to send the twitch IRC auth messages to the server
         """
-        self.sock.send(f"PASS {self.chan_info['token']}\n".encode('utf-8'))
-        self.sock.send(f"NICK {self.chan_info['nickname']}\n".encode('utf-8'))
-        self.sock.send(f"JOIN {self.chan_info['channel']}\n".encode('utf-8'))
+        self.sock.send(f"PASS {self.oauth_token}\n".encode('utf-8'))
+        self.sock.send(f"NICK {self.nickname}\n".encode('utf-8'))
+        self.sock.send(f"JOIN {self.channel}\n".encode('utf-8'))
 
     def connect(self):
         """
@@ -48,7 +48,7 @@ class Chat(object):
         returns None on success, raises an error on failure.
         """
         try:
-            self.sock.connect(self.server, self.port)
+            self.sock.connect((self.server, self.port))
         except Exception as e:
             raise Exception("CHAT OBJECT - THE FOLLOWING EXCEPTION OCCURED "
                             "WHEN TRYING TO CONNECT TO THE SERVER:\n" + str(e))
@@ -59,7 +59,7 @@ class Chat(object):
         """
         Send a chat message to the server
         """
-        self.sock.send(f"PRIVMSG #{self.channel} :{msg}\r\n".encode('utf-8'))
+        self.sock.send(f"PRIVMSG {self.channel} :{msg}\r\n".encode('utf-8'))
 
     def read_chat(self):
         """
