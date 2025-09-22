@@ -23,8 +23,6 @@ class Chat(object):
         # create a twitch bot that lives on a blocking socket, i.e. it waits
         # until it recieves a message. If that need ever arises, I'll create a
         # flag for it, but for now every chat object is a non-blocking object
-        self.sock.setblocking(False)
-        self.sock.settimeout(0)
 
     def _send_keep_alive(self, ping_msg: str) -> None:
         """
