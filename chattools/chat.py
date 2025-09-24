@@ -1,4 +1,5 @@
 import socket
+import select
 import errno
 
 
@@ -17,12 +18,6 @@ class Chat(object):
 
         # Create an internal socket object to manage connection
         self.sock = socket.socket()
-
-        # Make the socket a non-blocking socket
-        # NOTE: Right now I can't think of any reason someone would want to
-        # create a twitch bot that lives on a blocking socket, i.e. it waits
-        # until it recieves a message. If that need ever arises, I'll create a
-        # flag for it, but for now every chat object is a non-blocking object
 
     def _send_keep_alive(self, ping_msg: str) -> None:
         """
@@ -47,6 +42,8 @@ class Chat(object):
         """
         try:
             self.sock.connect((self.server, self.port))
+            # Make the socket a non-blocking socket
+            self.sock.setblocking(False)
         except Exception as e:
             raise Exception("CHAT OBJECT - THE FOLLOWING EXCEPTION OCCURED "
                             "WHEN TRYING TO CONNECT TO THE SERVER:\n" + str(e))

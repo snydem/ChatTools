@@ -10,7 +10,7 @@ class ChatTest(unittest.TestCase):
         config.read(path.Path("cfg/Oauth.ini"))
 
         # NOTE: I just needed a 24 hour channel
-        self.connect_channel = "starsmitten"
+        self.connect_channel = "emiru"
 
         self.oauth = config["AUTHORIZATION"]["token"]
         self.nickname = config["AUTHORIZATION"]["nickname"]
