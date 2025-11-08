@@ -3,11 +3,11 @@ import errno
 
 
 class Chat(object):
-    twitch_server = 'irc.chat.twitch.tv'
-    twitch_port = 6667
+    _twitch_server = 'irc.chat.twitch.tv'
+    _twitch_port = 6667
 
     def __init__(self, oauth_token: str, channel_name: str, nickname: str = "",
-                 server: str = twitch_server, port: int = twitch_port):
+                 server: str = _twitch_server, port: int = _twitch_port):
         self.oauth_token = oauth_token
         self.channel_name = channel_name
         self.channel = "#" + channel_name
