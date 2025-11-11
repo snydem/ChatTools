@@ -1,5 +1,7 @@
 import socket
 import errno
+from datetime import datetime
+from typing import Dict, Any
 
 
 class Chat(object):
@@ -33,7 +35,7 @@ class Chat(object):
         self.sock.send(f"NICK {self.nickname}\n".encode('utf-8'))
         self.sock.send(f"JOIN {self.channel}\n".encode('utf-8'))
 
-    def connect(self):
+    def connect(self) -> None:
         """
         Connect to a the specific twitch IRC
 
@@ -49,13 +51,13 @@ class Chat(object):
 
         self._send_authenticate()
 
-    def send_chat(self, msg: str):
+    def send_chat(self, msg: str) -> None:
         """
         Send a chat message to the server
         """
         self.sock.send(f"PRIVMSG {self.channel} :{msg}\r\n".encode('utf-8'))
 
-    def read_chat(self):
+    def read_chat(self) -> Dict[str, Any]:
         """
         Read a chat if one is available on the socket.
         """
@@ -67,13 +69,45 @@ class Chat(object):
         incoming_message = ""
         while True:
             try:
-                resp = self.sock.recv(1).decode('utf-8')
+                resp = self.sock.recv(1)
+                resp = resp.decode('utf-8')
                 incoming_message += resp
 
                 # if you find the msg delimeter on the character just read
+                # TODO: Parse messages a different way to handle ping msgs
                 if incoming_message.endswith('\r\n'):
-                    return incoming_message
+                    print(incoming_message)
+                    # First check for for PING message
+                    if incoming_message.startswith("PING"):
+                        pong_msg = incoming_message.split(" ")[1]
+                        self._send_keep_alive(pong_msg)
+                        continue
+                    # Now we need to parse the message string into a dict
+                    # of usable values
+                    # return incoming_message
+                    split_dict = incoming_message.split(":")
+                    meta_data = split_dict[1]
+                    try:
+                        chat_msg = split_dict[2]
+                    except IndexError:
+                        chat_msg = ""
 
+                    # split up the meta data
+                    chatter_name = meta_data.split("!")[0]
+                    msg_type = meta_data.split(" ")[1]
+                    dest_chat = meta_data.split(" ")[2]
+
+                    
+                    ret_dict = {
+                            "name": chatter_name,
+                            "message_type": msg_type,
+                            "destination": dest_chat,
+                            "date_time": datetime.now(),
+                            "chat_message": chat_msg
+                    }
+
+                    return ret_dict
+    
             except socket.error as e:
                 # get the error
                 err = e.args[0]
@@ -89,6 +123,10 @@ class Chat(object):
                     raise Exception(
                         "CHAT OBJECT - THE FOLLOWING EXCEPTION OCCURED "
                         "WHEN TRYING TO READ A CHAT:\n" + str(e))
+            except UnicodeDecodeError:
+                # TODO: Figure out what to do with this error when it happens
+                print(f"found non-decodable byte: {resp}")
+                continue
 
     def __del__(self):
         """ destructor for the object """
