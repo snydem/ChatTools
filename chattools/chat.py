@@ -73,8 +73,6 @@ class Chat(object):
                 resp = resp.decode('utf-8')
                 incoming_message += resp
 
-                # if you find the msg delimeter on the character just read
-                # TODO: Parse messages a different way to handle ping msgs
                 if incoming_message.endswith('\r\n'):
                     print(incoming_message)
                     # First check for for PING message
